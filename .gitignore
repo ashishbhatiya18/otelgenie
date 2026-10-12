@@ -1,0 +1,6 @@
+.DS_Store
+
+# The page is copied here when the program is built; only the stand-in is kept.
+cmd/otelgenie/ui/*
+!cmd/otelgenie/ui/index.html
+dist/

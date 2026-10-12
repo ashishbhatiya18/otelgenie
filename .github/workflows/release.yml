@@ -1,0 +1,59 @@
+name: release
+
+# A tag such as v0.3.0 builds the program for every platform, publishes the
+# archives as a release, and writes the Homebrew formula into the tap.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: go test ./...
+      - run: npm ci
+        working-directory: web
+
+      # Go builds for every platform from here: macOS on Intel and Apple
+      # silicon, Linux and Windows, each on amd64 and arm64.
+      - name: Build and pack
+        run: scripts/build-cli.sh "$GITHUB_REF_NAME"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.zip dist/checksums.txt \
+            --title "otelgenie ${GITHUB_REF_NAME#v}" --generate-notes
+
+      # The tap is another repository, so this needs a token that may write to
+      # it: a fine-grained token with "Contents: read and write" on
+      # ashishbhatiya18/homebrew-tap, saved here as the secret HOMEBREW_TAP_TOKEN.
+      - name: Update the Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$TAP_TOKEN" ]; then
+            echo "::warning::HOMEBREW_TAP_TOKEN is not set, so the tap was not updated. Run scripts/formula.sh ${GITHUB_REF_NAME} and commit the result to the tap by hand."
+            exit 0
+          fi
+          git clone --quiet --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/ashishbhatiya18/homebrew-tap.git" tap
+          scripts/formula.sh "$GITHUB_REF_NAME" > tap/Formula/otelgenie.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/otelgenie.rb
+          git diff --cached --quiet || git commit --quiet -m "otelgenie ${GITHUB_REF_NAME#v}"
+          git push --quiet
