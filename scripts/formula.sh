@@ -17,7 +17,6 @@ cat <<RUBY
 class Otelgenie < Formula
   desc "From a collector endpoint to working OpenTelemetry, guided, on your own machine"
   homepage "https://github.com/ashishbhatiya18/otelgenie"
-  version "$version"
 
   on_macos do
     on_arm do

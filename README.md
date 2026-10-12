@@ -15,10 +15,16 @@ on that machine and sent nowhere.
 | Observability | Installs the `otelgenie` program, fills in the page, downloads the bundle, and installs it. |
 
 ```
+brew install ashishbhatiya18/tap/otelgenie
 otelgenie config template-url https://github.example.com/observability/otel-templates
 otelgenie update        # fetch the latest template and check it
-otelgenie serve --open  # the page, at http://127.0.0.1:11111/
+otelgenie install       # keep the page running, always at http://127.0.0.1:11111/
 ```
+
+Homebrew installs the program as it was built for the release; no source code is downloaded.
+`otelgenie install` registers it as a Homebrew service, so it starts at login and is restarted
+if it stops; `otelgenie uninstall` stops it. `otelgenie serve` runs it in a terminal instead.
+Windows and Linux builds are on the [releases page](https://github.com/ashishbhatiya18/otelgenie/releases).
 
 The page produces one bundle: `README.md` (the install guide), `otelgenie.sh` and every file
 they refer to. The bundle is carried into the airgapped environment, where `otelgenie.sh`
@@ -29,6 +35,8 @@ checks, installs and validates.
   and not put in place of the one in use.
 - `template-url` may also be a folder; it is then read as it is, every time the page loads.
 - Build the program with `scripts/build-cli.sh VERSION`; the results are in `dist/`.
+- A tag such as `v0.3.0` makes GitHub Actions build every platform, publish the release and
+  update the Homebrew tap (the last needs the secret `HOMEBREW_TAP_TOKEN`).
 
 ## What the user needs to know
 

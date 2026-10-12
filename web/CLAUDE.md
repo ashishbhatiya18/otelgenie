@@ -37,6 +37,8 @@ The page does nothing on its own: it needs the program. To work on it with `npm 
 
 Engineering authors the template (a git repository, usually on GitHub Enterprise). The observability team is the user of everything else: they install the `otelgenie` program, run `otelgenie update` and `otelgenie serve`, fill in the page, download the bundle (`README.md`, `otelgenie.sh` and the files), and carry it into the airgapped environment, where `otelgenie.sh` does the work.
 
+Releases: pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds every platform, publishes the archives (each holds only the program) with `checksums.txt`, and, when the secret `HOMEBREW_TAP_TOKEN` is set, writes `Formula/otelgenie.rb` in `ashishbhatiya18/homebrew-tap` from `scripts/formula.sh`. The formula's `service` block runs `otelgenie serve --addr 127.0.0.1:11111`; `otelgenie install` only asks Homebrew to start that service. The port is fixed (`defaultAddr`).
+
 `scripts/build-cli.sh [VERSION]` builds the page, copies `web/out` into `cmd/otelgenie/ui` (embedded with `go:embed`) and builds the program for every platform into `dist/`.
 
 The page asks `/api/template` (`lib/cli.ts`) on every load and uses what comes back, so there is no stale template and the one-time setup has no template step. The program's settings and everything the page stores live under the user's config directory (`OTELGENIE_HOME` overrides): `config.json`, `fetched.json`, the fetched `template/`, and `data/`. A template address that is a folder is read live and never fetched. For an `https://` address `update` tries git's own credentials, then a token (environment, or `gh auth token`), then the same repository over SSH.
